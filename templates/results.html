@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PR Summaries</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+  <style>
+    body {
+      padding-top: 2rem;
+      padding-bottom: 4rem;
+      background-color: #f8f9fa;
+    }
+    .container {
+      max-width: 1200px;
+    }
+    .repo-section {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 2rem;
+      margin-bottom: 2rem;
+    }
+    .repo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    .pr-count {
+      background: #e9ecef;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+    .summary-section {
+      background: #f8f9fa;
+      border-radius: 6px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .pr-details {
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+    .pr-header {
+      cursor: pointer;
+      padding: 0.5rem;
+      background: #f8f9fa;
+      border-radius: 4px;
+      margin-bottom: 0.5rem;
+    }
+    .pr-content {
+      padding: 1rem;
+    }
+    .collapse-icon {
+      transition: transform 0.2s;
+    }
+    .collapsed .collapse-icon {
+      transform: rotate(-90deg);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="text-center mb-5">
+      <h1 class="display-4 mb-3">Repository Changes Summary</h1>
+      <h4 class="text-muted">{{ org_name }}</h4>
+      <p class="text-muted">{{ start_date }} to {{ end_date }}</p>
+      <div class="mt-4">
+        <a href="/download_pdf" class="btn btn-primary btn-lg">
+          <i class="bi bi-file-pdf me-2"></i>Download PDF Report
+        </a>
+      </div>
+    </div>
+
+    {% for repo, summary in repo_summaries.items() %}
+      <div class="repo-section">
+        <div class="repo-header">
+          <h2 class="h3 mb-0">{{ repo }}</h2>
+          <span class="pr-count">
+            <i class="bi bi-git me-1"></i>{{ repo_pr_data[repo]|length }} Pull Requests
+          </span>
+        </div>
+
+        <div class="summary-section">
+          <h5 class="mb-3">Final Summary</h5>
+          <p class="mb-0">{{ summary }}</p>
+        </div>
+
+        <div class="pr-list">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Pull Request Details</h5>
+            <button class="btn btn-sm btn-outline-secondary" onclick="toggleAllPRs(this)">
+              <i class="bi bi-chevron-expand me-1"></i>Expand All
+            </button>
+          </div>
+
+          {% for pr in repo_pr_data[repo] %}
+            <div class="pr-details">
+              <div class="pr-header collapsed" onclick="togglePR(this)">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <i class="bi bi-chevron-right collapse-icon me-2"></i>
+                    <strong>PR #{{ pr.number }}:</strong> {{ pr.title }}
+                  </div>
+                  <small class="text-muted">{{ pr.merged_at }}</small>
+                </div>
+              </div>
+              <div class="pr-content" style="display: none;">
+                {% if pr_level_summaries[repo] and pr_level_summaries[repo][pr.number] %}
+                <div class="summary-section mb-3">
+                  <strong>Summary:</strong>
+                  <p class="mb-0 mt-2">{{ pr_level_summaries[repo][pr.number] }}</p>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                  <strong>Author:</strong> {{ pr.author }}
+                </div>
+                
+                {% if pr.commits %}
+                <div class="mb-3">
+                  <strong>Commits:</strong>
+                  <ul class="list-unstyled mt-2 ms-3">
+                    {% for c in pr.commits %}
+                      <li class="mb-2">
+                        <i class="bi bi-git me-2"></i>{{ c.author }}: {{ c.message }}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% endif %}
+
+                {% if pr.files %}
+                <div>
+                  <strong>Files Changed:</strong>
+                  <ul class="list-unstyled mt-2 ms-3">
+                    {% for f in pr.files %}
+                      <li class="mb-2">
+                        <i class="bi bi-file-text me-2"></i>{{ f.filename }}
+                        <span class="badge bg-secondary ms-2">{{ f.changes }} changes</span>
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <script>
+    function togglePR(element) {
+      const content = element.nextElementSibling;
+      const isCollapsed = element.classList.contains('collapsed');
+      
+      if (isCollapsed) {
+        element.classList.remove('collapsed');
+        content.style.display = 'block';
+      } else {
+        element.classList.add('collapsed');
+        content.style.display = 'none';
+      }
+    }
+
+    function toggleAllPRs(button) {
+      const repoSection = button.closest('.repo-section');
+      const headers = repoSection.querySelectorAll('.pr-header');
+      const contents = repoSection.querySelectorAll('.pr-content');
+      const isExpanding = button.innerText.includes('Expand');
+      
+      headers.forEach(header => {
+        if (isExpanding) {
+          header.classList.remove('collapsed');
+        } else {
+          header.classList.add('collapsed');
+        }
+      });
+      
+      contents.forEach(content => {
+        content.style.display = isExpanding ? 'block' : 'none';
+      });
+      
+      button.innerHTML = isExpanding ? 
+        '<i class="bi bi-chevron-contract me-1"></i>Collapse All' : 
+        '<i class="bi bi-chevron-expand me-1"></i>Expand All';
+    }
+  </script>
+</body>
+</html>

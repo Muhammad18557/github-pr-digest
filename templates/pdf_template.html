@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>PDF Summary</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+      }
+      .repo-section {
+        margin-bottom: 40px;
+      }
+      .summary-block {
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin: 10px 0;
+      }
+      .pr-data {
+        margin-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Summary for {{ org_name }} ({{ start_date }} - {{ end_date }})</h1>
+
+    {% for repo, summary in repo_summaries.items() %}
+    <div class="repo-section">
+      <h2>{{ repo }}</h2>
+      <div class="summary-block">
+        <strong>Final Summary:</strong>
+        <p>{{ summary }}</p>
+      </div>
+      <h3>Pull Requests:</h3>
+      {% for pr in repo_pr_data[repo] %}
+      <div class="pr-data">
+        <h4>PR #{{ pr.number }}: {{ pr.title }}</h4>
+        <p>
+          <strong>Merged At:</strong> {{ pr.merged_at }}<br />
+          <strong>Author:</strong> {{ pr.author }}
+        </p>
+        <p><strong>Commits:</strong></p>
+        <ul>
+          {% for c in pr.commits %}
+          <li>{{ c.author }}: {{ c.message }}</li>
+          {% endfor %}
+        </ul>
+        <p><strong>Files Changed:</strong></p>
+        <ul>
+          {% for f in pr.files %}
+          <li>{{ f.filename }} ({{ f.status }}, {{ f.changes }} changes)</li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </body>
+</html>
