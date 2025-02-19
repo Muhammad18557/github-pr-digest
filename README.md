@@ -2,7 +2,6 @@
 
 A simple but useful tool that generates concise summaries of Pull Requests across your GitHub repositories. Built with Flask and OpenAI, this application helps teams quickly understand what has changed across their codebase over any time period.
 
-![PR Summary Generator](https://raw.githubusercontent.com/your-username/what-has-changed/main/screenshots/demo.png)
 
 ## Features
 
